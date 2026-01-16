@@ -1281,7 +1281,7 @@ const rrWorst = Math.min(rrBuy.ratio, rrSell.ratio);
                     value: supportSellValid,
                     description: supportSellValid ? 'Price below support' : 'Price above support'
                 });
-                const rrSellValid = rrSell.ratio >= 2;
+                const rrSellValid = rrSell.ratio >= 2.0;
 conditions.sellConditions.push({
   name: 'Risk/Reward ≥ 1:2',
   value: rrSellValid,
