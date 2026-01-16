@@ -1,1043 +1,1007 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="ProxyForce - Advanced proxy and compression control extension with 10-level power adjustment. Fast, secure, and private browsing." />
-  <meta name="keywords" content="proxy, vpn, ad blocker, compression, privacy, browser extension, chrome" />
-  <meta property="og:title" content="ProxyForce - Advanced Proxy & Compression Control" />
-  <meta property="og:description" content="Ultimate proxy control extension with 10-level power adjustment. Fast, secure, and private browsing." />
-  <meta property="og:type" content="website" />
-  <title>ProxyForce - Advanced Proxy & Compression Control</title>
-
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
-
-    :root {
-      --bg: #f6fbff;
-      --card: rgba(255, 255, 255, 0.72);
-      --card2: rgba(255, 255, 255, 0.62);
-      --ink: #0b0f16;
-      --muted: rgba(11, 15, 22, 0.62);
-      --line: rgba(11, 15, 22, 0.10);
-      --ice: #a9e9ff;
-      --ice2: #dff6ff;
-
-      --shadow: 0 20px 60px rgba(11, 15, 22, 0.10);
-      --shadow2: 0 12px 30px rgba(11, 15, 22, 0.08);
-
-      --r: 18px;
-      --t: 220ms cubic-bezier(0.22, 1, 0.36, 1);
-    }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    html {
-      scroll-behavior: smooth;
-    }
-
-    body {
-      font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-      color: var(--ink);
-      background:
-        radial-gradient(1200px 900px at 20% -10%, var(--ice2), transparent 60%),
-        radial-gradient(900px 700px at 110% 30%, rgba(169, 233, 255, 0.55), transparent 55%),
-        linear-gradient(180deg, #ffffff, var(--bg));
-      line-height: 1.7;
-      overflow-x: hidden;
-    }
-
-    .bg {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: -1;
-      overflow: hidden;
-      isolation: isolate;
-    }
-
-    .bg::before {
-      content: "";
-      position: absolute;
-      inset: -20%;
-      background:
-        radial-gradient(800px 600px at 15% 20%, rgba(169, 233, 255, 0.55), transparent 55%),
-        radial-gradient(900px 700px at 85% 30%, rgba(169, 233, 255, 0.35), transparent 55%),
-        radial-gradient(700px 500px at 45% 90%, rgba(11, 15, 22, 0.10), transparent 55%);
-      filter: blur(22px);
-      opacity: 0.95;
-      animation: fog 14s var(--t) infinite alternate;
-      transform: translate3d(0, 0, 0);
-    }
-
-    @keyframes fog {
-      0% { transform: translate3d(-14px, -10px, 0) scale(1.02) rotate(0.3deg); }
-      50% { transform: translate3d(10px, 12px, 0) scale(1.06) rotate(-0.2deg); }
-      100% { transform: translate3d(18px, -6px, 0) scale(1.03) rotate(0.4deg); }
-    }
-
-    .lattice {
-      position: absolute;
-      inset: -15%;
-      background:
-        linear-gradient(90deg, rgba(11, 15, 22, 0.08) 1px, transparent 1px),
-        linear-gradient(180deg, rgba(11, 15, 22, 0.06) 1px, transparent 1px),
-        radial-gradient(circle at 20% 25%, rgba(169, 233, 255, 0.26), transparent 55%),
-        radial-gradient(circle at 80% 70%, rgba(169, 233, 255, 0.16), transparent 55%);
-      background-size: 58px 58px, 58px 58px, auto, auto;
-      mask-image: radial-gradient(circle at 55% 45%, rgba(0, 0, 0, 0.92), transparent 70%);
-      opacity: 0.55;
-      animation: lattice 10s var(--t) infinite alternate;
-      transform: translate3d(0, 0, 0);
-    }
-
-    @keyframes lattice {
-      0% { transform: translate3d(-10px, 8px, 0) rotate(0.2deg) scale(1.02); }
-      100% { transform: translate3d(14px, -12px, 0) rotate(-0.25deg) scale(1.05); }
-    }
-
-    .ribbons {
-      position: absolute;
-      inset: -10%;
-      background:
-        conic-gradient(from 220deg at 50% 50%,
-          transparent 0 18%,
-          rgba(169, 233, 255, 0.45) 22%,
-          transparent 28% 55%,
-          rgba(169, 233, 255, 0.18) 58%,
-          transparent 65% 100%);
-      filter: blur(10px);
-      opacity: 0.42;
-      mix-blend-mode: multiply;
-      animation: ribbons 12s linear infinite;
-    }
-
-    @keyframes ribbons {
-      0% { transform: rotate(0deg) scale(1.05); }
-      100% { transform: rotate(360deg) scale(1.05); }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .bg::before, .lattice, .ribbons {
-        animation: none !important;
-      }
-    }
-
-    nav {
-      position: fixed;
-      top: 14px;
-      left: 14px;
-      right: 14px;
-      z-index: 1000;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 14px 16px;
-      border-radius: 20px;
-      background: var(--card);
-      border: 1px solid var(--line);
-      box-shadow: var(--shadow2);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-    }
-
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-weight: 900;
-      letter-spacing: 0.2px;
-      white-space: nowrap;
-      font-size: clamp(14px, 3vw, 16px);
-    }
-
-    .logo-badge {
-      width: 34px;
-      height: 34px;
-      border-radius: 12px;
-      background:
-        radial-gradient(circle at 30% 30%, #fff, rgba(169, 233, 255, 0.65)),
-        linear-gradient(135deg, rgba(11, 15, 22, 0.10), rgba(169, 233, 255, 0.45));
-      border: 1px solid rgba(11, 15, 22, 0.08);
-      box-shadow: 0 10px 25px rgba(169, 233, 255, 0.35);
-      flex: 0 0 auto;
-    }
-
-    nav ul {
-      display: flex;
-      list-style: none;
-      gap: 18px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-
-    nav a {
-      color: rgba(11, 15, 22, 0.78);
-      text-decoration: none;
-      font-weight: 700;
-      font-size: clamp(12px, 2vw, 13px);
-      letter-spacing: 0.02em;
-      padding: 8px 10px;
-      border-radius: 999px;
-      transition: background var(--t), color var(--t), border-color var(--t);
-      border: 1px solid transparent;
-    }
-
-    nav a:hover {
-      background: rgba(169, 233, 255, 0.22);
-      border-color: rgba(169, 233, 255, 0.55);
-      color: rgba(11, 15, 22, 0.92);
-    }
-
-    .cta-button {
-      background: linear-gradient(180deg, rgba(169, 233, 255, 0.95), rgba(169, 233, 255, 0.55));
-      color: rgba(11, 15, 22, 0.95);
-      padding: 10px 14px;
-      border-radius: 14px;
-      text-decoration: none;
-      font-weight: 900;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      border: 1px solid rgba(11, 15, 22, 0.10);
-      box-shadow: 0 16px 40px rgba(169, 233, 255, 0.22), 0 10px 24px rgba(11, 15, 22, 0.08);
-      transition: transform var(--t), box-shadow var(--t), filter var(--t);
-      white-space: nowrap;
-      font-size: clamp(11px, 1.8vw, 12px);
-    }
-
-    .cta-button:hover {
-      transform: translateY(-1px);
-      filter: brightness(1.03);
-      box-shadow: 0 20px 55px rgba(169, 233, 255, 0.28), 0 12px 28px rgba(11, 15, 22, 0.10);
-    }
-
-    .hero {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: clamp(80px, 15vh, 120px) 20px clamp(40px, 10vh, 60px);
-      text-align: center;
-      position: relative;
-    }
-
-    .hero-content {
-      max-width: 980px;
-      padding: 0 10px;
-    }
-
-    .hero-content h1 {
-      font-size: clamp(32px, 8vw, 62px);
-      font-weight: 900;
-      letter-spacing: -0.03em;
-      line-height: 1.02;
-      margin-bottom: 16px;
-    }
-
-    .hero-content h1 .accent {
-      background: linear-gradient(90deg, rgba(11, 15, 22, 0.95), rgba(169, 233, 255, 0.95));
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-    }
-
-    .hero-content p {
-      color: var(--muted);
-      font-size: clamp(14px, 3vw, 16px);
-      max-width: 680px;
-      margin: 0 auto 26px;
-      line-height: 1.8;
-    }
-
-    .hero-buttons {
-      display: flex;
-      gap: 12px;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-
-    .button {
-      padding: clamp(10px, 2vw, 12px) clamp(12px, 3vw, 16px);
-      border-radius: 14px;
-      text-decoration: none;
-      font-weight: 900;
-      letter-spacing: 0.10em;
-      text-transform: uppercase;
-      font-size: clamp(11px, 2vw, 12px);
-      border: 1px solid var(--line);
-      transition: transform var(--t), box-shadow var(--t), border-color var(--t), background var(--t);
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .button-primary {
-      background: rgba(11, 15, 22, 0.92);
-      color: #fff;
-      border-color: rgba(11, 15, 22, 0.92);
-      box-shadow: 0 16px 40px rgba(11, 15, 22, 0.18);
-    }
-
-    .button-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 22px 60px rgba(11, 15, 22, 0.22);
-    }
-
-    .button-secondary {
-      background: var(--card);
-      color: rgba(11, 15, 22, 0.88);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-    }
-
-    .button-secondary:hover {
-      transform: translateY(-2px);
-      border-color: rgba(169, 233, 255, 0.75);
-      box-shadow: 0 18px 48px rgba(169, 233, 255, 0.18), 0 12px 26px rgba(11, 15, 22, 0.08);
-    }
-
-    .features {
-      padding: clamp(60px, 10vh, 90px) 20px;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
-    .section-title {
-      font-size: clamp(28px, 6vw, 46px);
-      font-weight: 900;
-      text-align: center;
-      letter-spacing: -0.02em;
-      margin-bottom: clamp(30px, 5vh, 42px);
-    }
-
-    .section-title .accent {
-      background: linear-gradient(90deg, rgba(11, 15, 22, 0.95), rgba(169, 233, 255, 0.95));
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-    }
-
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 14px;
-    }
-
-    .feature-card {
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: var(--r);
-      padding: 20px;
-      box-shadow: var(--shadow2);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      transition: transform var(--t), box-shadow var(--t), border-color var(--t), background var(--t);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .feature-card::before {
-      content: "";
-      position: absolute;
-      inset: -30%;
-      background: radial-gradient(400px 200px at 20% 15%, rgba(169, 233, 255, 0.28), transparent 60%);
-      opacity: 0.9;
-      transform: rotate(10deg);
-      pointer-events: none;
-    }
-
-    .feature-card:hover {
-      transform: translateY(-2px);
-      border-color: rgba(169, 233, 255, 0.75);
-      box-shadow: 0 20px 60px rgba(169, 233, 255, 0.14), 0 14px 32px rgba(11, 15, 22, 0.08);
-      background: rgba(255, 255, 255, 0.80);
-    }
-
-    .feature-icon {
-      font-size: 30px;
-      margin-bottom: 10px;
-      display: block;
-    }
-
-    .feature-card h3 {
-      font-size: clamp(14px, 2.5vw, 16px);
-      font-weight: 900;
-      letter-spacing: -0.01em;
-      margin-bottom: 6px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .feature-card p {
-      color: var(--muted);
-      line-height: 1.8;
-      font-size: clamp(12px, 2vw, 13px);
-      position: relative;
-      z-index: 1;
-    }
-
-    .power-section {
-      padding: clamp(60px, 10vh, 90px) 20px;
-      border-top: 1px solid var(--line);
-      border-bottom: 1px solid var(--line);
-      background: rgba(255, 255, 255, 0.40);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-    }
-
-    .power-content {
-      max-width: 1200px;
-      margin: 0 auto;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-      align-items: center;
-    }
-
-    .power-text {
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: var(--r);
-      padding: 20px;
-      box-shadow: var(--shadow2);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-    }
-
-    .power-text h2 {
-      font-size: clamp(22px, 4vw, 28px);
-      font-weight: 900;
-      margin-bottom: 12px;
-      letter-spacing: -0.02em;
-    }
-
-    .power-text p {
-      color: var(--muted);
-      margin-bottom: 10px;
-      font-size: clamp(12px, 2vw, 13px);
-    }
-
-    .power-list {
-      list-style: none;
-      margin: 12px 0 0;
-    }
-
-    .power-list li {
-      padding: 8px 0;
-      color: var(--muted);
-      padding-left: 24px;
-      position: relative;
-      font-size: clamp(12px, 2vw, 13px);
-    }
-
-    .power-list li::before {
-      content: "•";
-      position: absolute;
-      left: 8px;
-      color: rgba(11, 15, 22, 0.75);
-      font-weight: 900;
-    }
-
-    .power-visual {
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: var(--r);
-      padding: 20px;
-      box-shadow: var(--shadow2);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-    }
-
-    .power-level {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin: 10px 0;
-    }
-
-    .power-label {
-      flex: 1;
-      font-weight: 800;
-      color: rgba(11, 15, 22, 0.86);
-      font-size: clamp(12px, 2vw, 13px);
-    }
-
-    .power-bar {
-      flex: 2;
-      height: 8px;
-      background: rgba(11, 15, 22, 0.08);
-      border-radius: 999px;
-      overflow: hidden;
-      border: 1px solid rgba(11, 15, 22, 0.10);
-      min-width: 60px;
-    }
-
-    .power-fill {
-      height: 100%;
-      background: linear-gradient(90deg, rgba(169, 233, 255, 0.95), rgba(169, 233, 255, 0.25));
-      border-radius: 999px;
-    }
-
-    .comparison {
-      padding: clamp(60px, 10vh, 90px) 20px;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
-    .table-wrap {
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: var(--r);
-      box-shadow: var(--shadow2);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      overflow: hidden;
-      margin-top: 18px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-
-    th {
-      text-align: left;
-      padding: clamp(12px, 2vw, 16px);
-      font-weight: 900;
-      font-size: clamp(11px, 2vw, 12px);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: rgba(11, 15, 22, 0.86);
-      background: rgba(169, 233, 255, 0.16);
-      border-bottom: 1px solid var(--line);
-    }
-
-    td {
-      padding: clamp(10px, 2vw, 14px) clamp(12px, 2vw, 16px);
-      border-bottom: 1px solid rgba(11, 15, 22, 0.08);
-      color: rgba(11, 15, 22, 0.82);
-      font-size: clamp(12px, 2vw, 13px);
-    }
-
-    tr:hover td {
-      background: rgba(169, 233, 255, 0.10);
-    }
-
-    .download-section {
-      background: rgba(255, 255, 255, 0.40);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-    }
-
-    .install-guide-text {
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: var(--r);
-      padding: 24px;
-      box-shadow: var(--shadow2);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      margin-bottom: 20px;
-    }
-
-    .install-guide-text h3 {
-      font-size: 20px;
-      font-weight: 900;
-      margin-bottom: 16px;
-      color: var(--ink);
-    }
-
-    .install-guide-text ol, 
-    .install-guide-text ul {
-      color: var(--muted);
-      line-height: 2;
-      margin-left: 20px;
-      font-size: 14px;
-    }
-
-    .install-guide-text ul {
-      margin-top: 8px;
-    }
-
-    .code-block {
-      background: rgba(11, 15, 22, 0.08);
-      padding: 4px 8px;
-      border-radius: 4px;
-      word-break: break-all;
-      font-family: monospace;
-    }
-
-    .troubleshoot-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 16px;
-    }
-
-    .troubleshoot-item {
-      padding: 16px;
-      border-left: 3px solid rgba(169, 233, 255, 0.75);
-    }
-
-    .troubleshoot-item p:first-child {
-      color: var(--ink);
-      font-weight: 700;
-      margin-bottom: 8px;
-    }
-
-    .troubleshoot-item p:last-child {
-      color: var(--muted);
-      font-size: 14px;
-      margin: 0;
-    }
-
-    footer {
-      padding: 40px 20px;
-      text-align: center;
-      border-top: 1px solid var(--line);
-      color: var(--muted);
-    }
-
-    .footer-links {
-      margin-bottom: 16px;
-      display: flex;
-      gap: 14px;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-
-    .footer-links a {
-      color: var(--muted);
-      text-decoration: none;
-      padding: 8px 10px;
-      border-radius: 999px;
-      border: 1px solid transparent;
-      transition: background var(--t), border-color var(--t), color var(--t);
-      font-weight: 700;
-      font-size: clamp(12px, 2vw, 13px);
-    }
-
-    .footer-links a:hover {
-      background: rgba(169, 233, 255, 0.18);
-      border-color: rgba(169, 233, 255, 0.55);
-      color: rgba(11, 15, 22, 0.88);
-    }
-
-    .footer-text {
-      font-size: clamp(11px, 2vw, 12px);
-    }
-
-    .download-btn-large {
-      background: linear-gradient(180deg, rgba(169, 233, 255, 0.95), rgba(169, 233, 255, 0.55));
-      color: rgba(11, 15, 22, 0.95);
-      padding: 14px 20px;
-      border-radius: 14px;
-      text-decoration: none;
-      font-weight: 900;
-      letter-spacing: 0.08em;
-      border: 1px solid rgba(11, 15, 22, 0.10);
-      box-shadow: 0 16px 40px rgba(169, 233, 255, 0.22);
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      transition: transform var(--t), box-shadow var(--t), filter var(--t);
-      font-size: 14px;
-    }
-
-    .download-btn-large:hover {
-      transform: translateY(-2px);
-      filter: brightness(1.03);
-      box-shadow: 0 20px 55px rgba(169, 233, 255, 0.28);
-    }
-
-    @media (max-width: 900px) {
-      nav {
-        top: 10px;
-        left: 10px;
-        right: 10px;
-        padding: 12px;
-        flex-direction: column;
-        align-items: center;
-        gap: 10px;
-      }
-
-      nav ul {
-        gap: 8px;
-        order: 3;
-        width: 100%;
-        justify-content: center;
-      }
-
-      .logo {
-        order: 1;
-      }
-
-      .cta-button {
-        order: 2;
-      }
-
-      .power-content {
-        grid-template-columns: 1fr;
-      }
-
-      .features-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .hero {
-        padding: clamp(80px, 12vh, 100px) 16px 40px;
-      }
-
-      .features {
-        padding: 60px 16px;
-      }
-
-      .comparison {
-        padding: 60px 16px;
-      }
-
-      .power-section {
-        padding: 60px 16px;
-      }
-    }
-
-    @media (max-width: 640px) {
-      nav {
-        top: 8px;
-        left: 8px;
-        right: 8px;
-        padding: 10px;
-      }
-
-      nav ul {
-        gap: 6px;
-      }
-
-      nav a {
-        padding: 6px 8px;
-      }
-
-      .feature-card {
-        padding: 16px;
-      }
-
-      .power-text,
-      .power-visual {
-        padding: 16px;
-      }
-
-      .table-wrap {
-        overflow-x: auto;
-      }
-
-      table {
-        min-width: 320px;
-      }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Signal Monitor - Professional Trading</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --bg-primary: #0a0e27;
+            --bg-secondary: #0f1429;
+            --bg-tertiary: #1a1f3a;
+            --accent: #00d9ff;
+            --accent-light: #4dc9ff;
+            --success: #00ff88;
+            --danger: #ff3366;
+            --warning: #ffaa00;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --border: rgba(0, 217, 255, 0.15);
+            --grid-bg: rgba(0, 217, 255, 0.05);
+        }
+        
+        body {
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(0, 217, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 217, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            grid-template-rows: 60px 1fr;
+            height: 100vh;
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* Header */
+        .header {
+            grid-column: 1 / -1;
+            background: rgba(10, 14, 39, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 30px;
+        }
+        
+        .logo {
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            padding: 6px 12px;
+            background: rgba(0, 217, 255, 0.1);
+            border: 1px solid var(--border);
+            border-radius: 3px;
+        }
+        
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        
+        .time-display {
+            font-size: 11px;
+            color: var(--text-secondary);
+            min-width: 100px;
+        }
+        
+        /* Main Content */
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            gap: 15px;
+            overflow-y: auto;
+        }
+        
+        /* Search Section */
+        .search-section {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .search-box {
+            flex: 1;
+            display: flex;
+            gap: 8px;
+        }
+        
+        .search-box input {
+            flex: 1;
+            padding: 10px 12px;
+            background: var(--grid-bg);
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 11px;
+            transition: all 0.3s;
+        }
+        
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: rgba(0, 217, 255, 0.08);
+            box-shadow: 0 0 15px rgba(0, 217, 255, 0.1);
+        }
+        
+        .search-btn {
+            padding: 10px 16px;
+            background: var(--accent);
+            color: var(--bg-primary);
+            border: none;
+            border-radius: 3px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 11px;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .search-btn:hover {
+            background: var(--accent-light);
+            transform: translateY(-1px);
+            box-shadow: 0 5px 15px rgba(0, 217, 255, 0.3);
+        }
+        
+        /* Symbol Grid */
+        .symbols-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(75px, 1fr));
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .symbol-chip {
+            padding: 8px 10px;
+            background: var(--grid-bg);
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            color: var(--accent);
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: bold;
+            font-family: inherit;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-align: center;
+        }
+        
+        .symbol-chip:hover {
+            border-color: var(--accent);
+            background: rgba(0, 217, 255, 0.15);
+            transform: translateY(-2px);
+        }
+        
+        .symbol-chip.active {
+            background: var(--accent);
+            color: var(--bg-primary);
+            border-color: var(--accent);
+        }
+        
+        /* Signals Container */
+        .signals-wrapper {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .signal-card {
+            background: rgba(26, 31, 58, 0.7);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--text-secondary);
+            border-radius: 3px;
+            padding: 12px 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .signal-card:hover {
+            border-color: var(--accent);
+            background: rgba(0, 217, 255, 0.1);
+            transform: translateX(3px);
+        }
+        
+        .signal-card.buy {
+            border-left-color: var(--success);
+        }
+        
+        .signal-card.buy:hover {
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.15);
+        }
+        
+        .signal-card.sell {
+            border-left-color: var(--danger);
+        }
+        
+        .signal-card.sell:hover {
+            box-shadow: 0 0 20px rgba(255, 51, 102, 0.15);
+        }
+        
+        .signal-card.neutral {
+            border-left-color: var(--warning);
+        }
+        
+        .signal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .signal-symbol {
+            font-size: 13px;
+            font-weight: bold;
+            color: var(--accent);
+            letter-spacing: 1px;
+        }
+        
+        .signal-badge {
+            padding: 2px 8px;
+            border-radius: 2px;
+            font-size: 9px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .signal-badge.buy {
+            background: rgba(0, 255, 136, 0.2);
+            color: var(--success);
+        }
+        
+        .signal-badge.sell {
+            background: rgba(255, 51, 102, 0.2);
+            color: var(--danger);
+        }
+        
+        .signal-badge.neutral {
+            background: rgba(255, 170, 0, 0.2);
+            color: var(--warning);
+        }
+        
+        .signal-metrics {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            font-size: 10px;
+        }
+        
+        .metric {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        
+        .metric-label {
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 8px;
+        }
+        
+        .metric-value {
+            color: var(--accent);
+            font-weight: bold;
+        }
+        
+        .strength-meter {
+            height: 2px;
+            background: rgba(0, 217, 255, 0.2);
+            border-radius: 1px;
+            margin-top: 6px;
+            overflow: hidden;
+        }
+        
+        .strength-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--accent-light));
+            transition: width 0.3s;
+        }
+        
+        /* Right Panel - Chat */
+        .chat-panel {
+            background: rgba(26, 31, 58, 0.9);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            gap: 12px;
+        }
+        
+        .chat-header {
+            font-size: 11px;
+            font-weight: bold;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .chat-display {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .chat-msg {
+            padding: 8px 10px;
+            border-radius: 3px;
+            font-size: 9px;
+            line-height: 1.5;
+            word-break: break-word;
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .chat-msg.bot {
+            background: rgba(0, 217, 255, 0.1);
+            border-left: 2px solid var(--accent);
+            color: var(--accent);
+        }
+        
+        .chat-msg.user {
+            background: rgba(0, 255, 136, 0.1);
+            border-left: 2px solid var(--success);
+            color: var(--success);
+            align-self: flex-end;
+            max-width: 95%;
+        }
+        
+        .chat-input-box {
+            display: flex;
+            gap: 8px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+        }
+        
+        .chat-input-box input {
+            flex: 1;
+            padding: 8px 10px;
+            background: var(--grid-bg);
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 9px;
+            transition: all 0.2s;
+        }
+        
+        .chat-input-box input:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: rgba(0, 217, 255, 0.08);
+        }
+        
+        .chat-send-btn {
+            padding: 8px 12px;
+            background: var(--accent);
+            color: var(--bg-primary);
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-weight: bold;
+            font-family: inherit;
+            font-size: 9px;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .chat-send-btn:hover {
+            background: var(--accent-light);
+            transform: translateY(-1px);
+        }
+        
+        /* Scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 217, 255, 0.2);
+            border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 217, 255, 0.4);
+        }
+        
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            .chat-panel {
+                display: none;
+            }
+        }
+    </style>
 </head>
-
 <body>
-  <!-- Background animation layers -->
-  <div class="bg" aria-hidden="true">
-    <div class="lattice"></div>
-    <div class="ribbons"></div>
-  </div>
-
-  <!-- Navigation -->
-  <nav>
-    <div class="logo">
-      <span class="logo-badge" aria-hidden="true"></span>
-      <span>ProxyForce</span>
-    </div>
-    <ul>
-      <li><a href="#features">Features</a></li>
-      <li><a href="#power">Power Control</a></li>
-      <li><a href="#download">Download</a></li>
-      <li><a href="#installation">Install Guide</a></li>
-    </ul>
-    <a href="#download" class="cta-button">Download Now</a>
-  </nav>
-
-  <!-- Hero Section -->
-  <section class="hero">
-    <div class="hero-content">
-      <h1><span class="accent">ProxyForce</span></h1>
-      <p>
-        Advanced proxy and compression control with 10-level power adjustment.<br />
-        Fast, secure, and private browsing in one extension.
-      </p>
-      <div class="hero-buttons">
-        <a href="#download" class="button button-primary">Download Extension</a>
-        <a href="#features" class="button button-secondary">Learn More</a>
-      </div>
-    </div>
-  </section>
-
-  <!-- Features Section -->
-  <section class="features" id="features">
-    <h2 class="section-title"><span class="accent">Key Features</span></h2>
-    <div class="features-grid">
-      <div class="feature-card">
-        <span class="feature-icon">🔌</span>
-        <h3>Proxy Control</h3>
-        <p>Switch between multiple proxy servers freely. Achieve secure and fast communication with flexible server selection.</p>
-      </div>
-
-      <div class="feature-card">
-        <span class="feature-icon">📦</span>
-        <h3>Data Compression</h3>
-        <p>Control compression rates in 10 levels. Reduce network load by up to 99% and optimize bandwidth usage.</p>
-      </div>
-
-      <div class="feature-card">
-        <span class="feature-icon">🚫</span>
-        <h3>Ad Blocking</h3>
-        <p>Automatically detect and remove unwanted advertisements. Enjoy a clean and comfortable browsing experience.</p>
-      </div>
-
-      <div class="feature-card">
-        <span class="feature-icon">👁️</span>
-        <h3>Tracking Prevention</h3>
-        <p>Block 2,400+ tracking domains. Protect your privacy completely from online trackers and analytics services.</p>
-      </div>
-
-      <div class="feature-card">
-        <span class="feature-icon">🔒</span>
-        <h3>Encrypted Communication</h3>
-        <p>Enforce HTTPS and SSL/TLS support. Establish a secure communication environment with strong encryption.</p>
-      </div>
-
-      <div class="feature-card">
-        <span class="feature-icon">⚡</span>
-        <h3>Caching Optimization</h3>
-        <p>Smart caching mechanism for faster loading. Service Worker compatible for enhanced performance.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- Power Level Section -->
-  <section class="power-section" id="power">
-    <div class="power-content">
-      <div class="power-text">
-        <h2>10-Level Power Control</h2>
-        <p>Fine-tune your browsing experience. Customize settings to match your specific needs.</p>
-
-        <ul class="power-list">
-          <li>Level 1-3: Lightweight mode (low power consumption)</li>
-          <li>Level 4-6: Balanced mode (recommended)</li>
-          <li>Level 7-10: Maximum protection mode (full features)</li>
-        </ul>
-
-        <p>Higher power levels increase:</p>
-        <ul class="power-list">
-          <li>Data compression rate (up to 99%)</li>
-          <li>Privacy protection level</li>
-          <li>Ad and tracking blocking effectiveness</li>
-        </ul>
-      </div>
-
-      <div class="power-visual">
-        <div class="power-level">
-          <span class="power-label">Level 1</span>
-          <div class="power-bar"><div class="power-fill" style="width: 10%;"></div></div>
-        </div>
-        <div class="power-level">
-          <span class="power-label">Level 3</span>
-          <div class="power-bar"><div class="power-fill" style="width: 30%;"></div></div>
-        </div>
-        <div class="power-level">
-          <span class="power-label">Level 5</span>
-          <div class="power-bar"><div class="power-fill" style="width: 50%;"></div></div>
-        </div>
-        <div class="power-level">
-          <span class="power-label">Level 7</span>
-          <div class="power-bar"><div class="power-fill" style="width: 70%;"></div></div>
-        </div>
-        <div class="power-level">
-          <span class="power-label">Level 10</span>
-          <div class="power-bar"><div class="power-fill" style="width: 100%;"></div></div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Comparison Section -->
-  <section class="comparison" id="comparison">
-    <h2 class="section-title"><span class="accent">Power Level Comparison</span></h2>
-
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Level</th>
-            <th>Compression</th>
-            <th>Latency</th>
-            <th>Recommended For</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>1-3</td>
-            <td>10-30%</td>
-            <td>30-80ms</td>
-            <td>Lightweight, low power</td>
-          </tr>
-          <tr>
-            <td>4-6</td>
-            <td>35-55%</td>
-            <td>100-150ms</td>
-            <td>Balanced (recommended)</td>
-          </tr>
-          <tr>
-            <td>7-10</td>
-            <td>70-99%</td>
-            <td>200-400ms</td>
-            <td>Maximum protection</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  <!-- Download Section -->
-  <section class="features download-section" id="download">
-    <h2 class="section-title" style="margin-bottom: 30px;"><span class="accent">Download ProxyForce</span></h2>
+    <div class="grid-overlay"></div>
     
-    <div style="max-width: 800px; margin: 0 auto;">
-      <div class="feature-card" style="text-align: center; padding: 40px;">
-        <span class="feature-icon" style="font-size: 48px;">📦</span>
-        <h3 style="font-size: 24px; margin-bottom: 12px;">Get ProxyForce Now</h3>
-        <p style="margin-bottom: 24px; color: var(--muted);">
-          Download the complete extension package. Perfect for manual installation on your Chrome browser.
-        </p>
-        <a href="pack-all/Pack-VP.zip" download class="download-btn-large">
-          ⬇️ Download Pack-VP.zip
-        </a>
-        <p style="font-size: 12px; color: var(--muted); margin-top: 16px;">
-          📦 File: Pack-VP.zip | Packed extension ready for Chrome
-        </p>
-      </div>
+    <div class="container">
+        <header class="header">
+            <div class="logo">⚡ Quantum Signal</div>
+            <div style="display: flex; gap: 15px; flex: 1; margin-left: 20px;">
+                <div class="status-indicator">
+                    <div class="status-dot"></div>
+                    <span>LIVE MONITORING</span>
+                </div>
+                <div class="time-display" id="timeDisplay">00:00:00 UTC</div>
+            </div>
+        </header>
+        
+        <main class="main-content">
+            <div class="search-section">
+                <div class="search-box">
+                    <input type="text" id="symbolInput" placeholder="Search symbol..." maxlength="15">
+                    <button class="search-btn" onclick="searchSymbol()">SEARCH</button>
+                </div>
+            </div>
+            
+            <div class="symbols-grid" id="symbolsGrid"></div>
+            
+            <div class="signals-wrapper" id="signalsContainer"></div>
+        </main>
+        
+        <aside class="chat-panel">
+            <div class="chat-header">AI Signal Assistant</div>
+            <div class="chat-display" id="chatDisplay"></div>
+            <div class="chat-input-box">
+                <input type="text" id="chatInput" placeholder="Ask about signals..." maxlength="100">
+                <button class="chat-send-btn" onclick="sendChat()">SEND</button>
+            </div>
+        </aside>
     </div>
-  </section>
 
-  <!-- Installation Guide Section -->
-  <section class="comparison" id="installation">
-    <h2 class="section-title" style="margin-bottom: 30px;"><span class="accent">How to Install ProxyForce</span></h2>
-
-    <div style="max-width: 1000px; margin: 0 auto;">
-      <!-- Installation Steps -->
-      <div class="install-guide-text">
-        <h3>📋 Installation Steps</h3>
-        <ol>
-          <li>
-            <strong style="color: var(--ink);">Download the ZIP file</strong>
-            <ul>
-              <li>Click the "Download Pack-VP.zip" button above</li>
-              <li>Save it to a folder (e.g., Desktop or Documents)</li>
-            </ul>
-          </li>
-          <li>
-            <strong style="color: var(--ink);">Extract the ZIP file</strong>
-            <ul>
-              <li>Right-click the <strong>Pack-VP.zip</strong> file</li>
-              <li>Select <strong>"Extract All"</strong> or <strong>"解凍"</strong></li>
-              <li>A new folder named <strong>"Pack-VP"</strong> will be created</li>
-            </ul>
-          </li>
-          <li>
-            <strong style="color: var(--ink);">Open Chrome Extensions</strong>
-            <ul>
-              <li>Open Chrome and go to: <span class="code-block">chrome://extensions/</span></li>
-              <li>Or: Menu ☰ → More tools → Extensions</li>
-            </ul>
-          </li>
-          <li>
-            <strong style="color: var(--ink);">Enable Developer Mode</strong>
-            <ul>
-              <li>Click the toggle switch in the top-right: <strong>"Developer mode"</strong></li>
-              <li>This enables loading unpacked extensions</li>
-            </ul>
-          </li>
-          <li>
-            <strong style="color: var(--ink);">Load the extension</strong>
-            <ul>
-              <li>Click <strong>"Load unpacked"</strong> button (appears after enabling Developer mode)</li>
-              <li>Navigate to and select the <strong>"Pack-VP"</strong> folder</li>
-              <li>Click <strong>"Select Folder"</strong></li>
-            </ul>
-          </li>
-          <li>
-            <strong style="color: var(--ink);">Verify Installation</strong>
-            <ul>
-              <li>ProxyForce should now appear in your extensions list</li>
-              <li>The extension icon will appear in your Chrome toolbar</li>
-              <li>Click the icon to open the popup and start using it</li>
-            </ul>
-          </li>
-        </ol>
-
-        <div style="background: rgba(169, 233, 255, 0.10); border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin-top: 24px;">
-          <h4 style="color: var(--ink); font-weight: 900; margin-bottom: 12px;">📍 Quick Reference:</h4>
-          <p style="color: var(--muted); font-size: 13px; margin-bottom: 8px;">
-            <strong>Chrome Extensions URL:</strong> <span class="code-block">chrome://extensions/</span>
-          </p>
-          <p style="color: var(--muted); font-size: 13px;">
-            <strong>Folder Location:</strong> Look for the extracted <strong>"Pack-VP"</strong> folder when clicking "Load unpacked"
-          </p>
-        </div>
-      </div>
-
-      <!-- Troubleshooting -->
-      <div class="install-guide-text" style="margin-top: 20px;">
-        <h3>❓ Troubleshooting</h3>
-        <div class="troubleshoot-grid">
-          <div class="troubleshoot-item">
-            <p>❌ Extension doesn't show up?</p>
-            <p>Make sure you've enabled "Developer mode" in chrome://extensions/ first.</p>
-          </div>
-          <div class="troubleshoot-item">
-            <p>❌ "Load unpacked" button missing?</p>
-            <p>Enable the "Developer mode" toggle in the top-right corner of the Extensions page.</p>
-          </div>
-          <div class="troubleshoot-item">
-            <p>❌ File extraction failed?</p>
-            <p>Try using 7-Zip or WinRAR instead of the default Windows extractor. Make sure you extract to a simple folder path.</p>
-          </div>
-          <div class="troubleshoot-item">
-            <p>❌ Extension won't load?</p>
-            <p>Check that manifest.json exists in the Pack-VP folder. Make sure the folder path doesn't contain special characters.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Final CTA Section -->
-  <section class="hero" style="min-height: auto; padding: clamp(50px, 8vh, 70px) 20px;">
-    <div class="hero-content">
-      <h2 class="section-title" style="margin-bottom: 10px;"><span class="accent">Ready to Start?</span></h2>
-      <p>Download ProxyForce now and take control of your browsing experience with advanced proxy and compression features.</p>
-      <div class="hero-buttons" style="margin-top: 20px;">
-        <a href="#download" class="button button-primary">Download Extension</a>
-        <a href="#installation" class="button button-secondary">View Installation Guide</a>
-      </div>
-    </div>
-  </section>
-
-  <!-- Footer -->
-  <footer>
-    <div class="footer-links">
-      <a href="#privacy">Privacy Policy</a>
-      <a href="#terms">Terms of Service</a>
-      <a href="#contact">Contact</a>
-      <a href="https://twitter.com/proxyforce" rel="noopener noreferrer">Twitter</a>
-    </div>
-    <p class="footer-text">&copy; 2026 ProxyForce. All rights reserved.</p>
-  </footer>
+    <script>
+        // ===== ADVANCED SIGNAL ENGINE =====
+        class AdvancedSignalEngine {
+            constructor() {
+                this.symbols = ['BTC/USD', 'ETH/USD', 'SPY', 'AAPL', 'EUR/USD', 'GLD', 'TSLA', 'AMZN', 'XAU/USD', 'OIL/USD', 'EURUSD', 'GBPUSD'];
+                this.priceData = new Map();
+                this.indicatorCache = new Map();
+                this.signals = [];
+                this.selectedSignal = null;
+                this.chatHistory = [];
+                
+                this.initializePriceData();
+                this.advancedPrompts = this.loadAdvancedPrompts();
+            }
+            
+            initializePriceData() {
+                this.symbols.forEach(symbol => {
+                    const basePrice = 30000 + Math.random() * 60000;
+                    this.priceData.set(symbol, {
+                        current: basePrice,
+                        history: Array(100).fill(0).map(() => basePrice + (Math.random() - 0.5) * basePrice * 0.05),
+                        volume: Math.random() * 1000000,
+                        volatility: Math.random() * 50
+                    });
+                });
+            }
+            
+            loadAdvancedPrompts() {
+                return {
+                    detail: "Provide comprehensive technical analysis with support/resistance levels, entry/exit strategies, risk assessment, and position sizing recommendations.",
+                    risk: "Analyze market risk factors including volatility clustering, tail risk probability, Value-at-Risk (VaR), and optimal stop-loss placement.",
+                    momentum: "Evaluate momentum indicators including RSI divergences, MACD histogram acceleration, Stochastic crossovers, and volume confirmation patterns.",
+                    trend: "Assess trend strength using moving average confluence, higher-high/lower-low sequences, trendline breaks, and potential reversal signals.",
+                    entry: "Generate precise entry signals with execution price, confirmation indicators, optimal entry window, and alternative entries if primary fails.",
+                    exit: "Define exit strategy with take-profit levels, trailing stop methodology, breakeven rules, and profit protection mechanisms."
+                };
+            }
+            
+            // Multi-timeframe RSI Analysis
+            calculateRSI(prices, period = 14) {
+                const changes = [];
+                for (let i = 1; i < prices.length; i++) {
+                    changes.push(prices[i] - prices[i - 1]);
+                }
+                
+                let avgGain = 0, avgLoss = 0;
+                for (let i = 0; i < period; i++) {
+                    if (changes[i] > 0) avgGain += changes[i];
+                    else avgLoss += Math.abs(changes[i]);
+                }
+                avgGain /= period;
+                avgLoss /= period;
+                
+                let rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
+                let rsi = 100 - (100 / (1 + rs));
+                
+                return Math.max(0, Math.min(100, rsi));
+            }
+            
+            // MACD with Signal Line
+            calculateMACD(prices, fast = 12, slow = 26, signal = 9) {
+                const emaFast = this.calculateEMA(prices, fast);
+                const emaSlow = this.calculateEMA(prices, slow);
+                const macdLine = emaFast - emaSlow;
+                
+                const macdHistory = [];
+                for (let i = 0; i < prices.length - slow; i++) {
+                    const fast = this.calculateEMA(prices.slice(i, i + fast + 1), fast);
+                    const slow = this.calculateEMA(prices.slice(i, i + slow + 1), slow);
+                    macdHistory.push(fast - slow);
+                }
+                
+                const signalLine = this.calculateEMA(macdHistory, signal);
+                const histogram = macdLine - signalLine;
+                
+                return { macdLine, signalLine, histogram, trend: histogram > 0 ? 'BULLISH' : 'BEARISH' };
+            }
+            
+            calculateEMA(prices, period) {
+                const k = 2 / (period + 1);
+                let ema = prices[0];
+                for (let i = 1; i < Math.min(period * 3, prices.length); i++) {
+                    ema = prices[i] * k + ema * (1 - k);
+                }
+                return ema;
+            }
+            
+            // Bollinger Bands with Standard Deviation
+            calculateBollingerBands(prices, period = 20, stdDev = 2) {
+                const sma = prices.slice(-period).reduce((a, b) => a + b) / period;
+                const variance = prices.slice(-period).reduce((sum, p) => sum + Math.pow(p - sma, 2), 0) / period;
+                const std = Math.sqrt(variance);
+                
+                return {
+                    upper: sma + (std * stdDev),
+                    middle: sma,
+                    lower: sma - (std * stdDev),
+                    bandwidth: (2 * std) / sma * 100,
+                    position: ((prices[prices.length - 1] - (sma - std)) / (2 * std)) * 100
+                };
+            }
+            
+            // Stochastic Oscillator
+            calculateStochastic(prices, period = 14, smooth = 3) {
+                const high = Math.max(...prices.slice(-period));
+                const low = Math.min(...prices.slice(-period));
+                const close = prices[prices.length - 1];
+                
+                let k = high === low ? 50 : ((close - low) / (high - low)) * 100;
+                k = Math.max(0, Math.min(100, k));
+                
+                return { k, d: k, signal: 'NEUTRAL', overbought: k > 80, oversold: k < 20 };
+            }
+            
+            // ATR (Average True Range)
+            calculateATR(prices, period = 14) {
+                let tr = 0;
+                const count = Math.min(period, prices.length - 1);
+                
+                for (let i = Math.max(1, prices.length - period); i < prices.length; i++) {
+                    const high = prices[i];
+                    const low = prices[i - 1];
+                    tr += Math.abs(high - low);
+                }
+                
+                return tr / count;
+            }
+            
+            // Fibonacci Levels
+            calculateFibonacci(prices) {
+                const high = Math.max(...prices);
+                const low = Math.min(...prices);
+                const diff = high - low;
+                
+                return {
+                    r0: high,
+                    r236: high - (diff * 0.236),
+                    r382: high - (diff * 0.382),
+                    r618: high - (diff * 0.618),
+                    r786: high - (diff * 0.786),
+                    s0: low
+                };
+            }
+            
+            // Complex Moving Average Analysis
+            calculateMovingAverages(prices) {
+                const ma8 = this.calculateEMA(prices, 8);
+                const ma20 = this.calculateEMA(prices, 20);
+                const ma50 = this.calculateEMA(prices, 50);
+                const ma200 = this.calculateEMA(prices, Math.min(200, prices.length));
+                
+                return {
+                    ema8: ma8,
+                    ema20: ma20,
+                    ema50: ma50,
+                    ema200: ma200,
+                    alignment: this.checkMAAlignment(ma8, ma20, ma50, ma200)
+                };
+            }
+            
+            checkMAAlignment(ma8, ma20, ma50, ma200) {
+                if (ma8 > ma20 && ma20 > ma50 && ma50 > ma200) return 'STRONG UPTREND';
+                if (ma8 < ma20 && ma20 < ma50 && ma50 < ma200) return 'STRONG DOWNTREND';
+                return 'MIXED';
+            }
+            
+            // Advanced Divergence Detection
+            detectDivergence(prices, rsi) {
+                const recentPrices = prices.slice(-10);
+                const recentRSI = Array(10).fill(0).map((_, i) => this.calculateRSI(prices.slice(0, prices.length - 10 + i)));
+                
+                const priceHigher = recentPrices[9] > recentPrices[0];
+                const rsiLower = recentRSI[9] < recentRSI[0];
+                
+                if (priceHigher && rsiLower) return { type: 'BEARISH', confidence: 'HIGH' };
+                if (!priceHigher && !rsiLower) return { type: 'BULLISH', confidence: 'HIGH' };
+                
+                return { type: 'NONE', confidence: 'LOW' };
+            }
+            
+            // Volume Analysis
+            analyzeVolume(symbol) {
+                const data = this.priceData.get(symbol);
+                return {
+                    current: data.volume,
+                    trend: Math.random() > 0.5 ? 'INCREASING' : 'DECREASING',
+                    strength: Math.random() * 100
+                };
+            }
+            
+            // COMPOSITE SIGNAL GENERATION
+            generateSignal(symbol) {
+                const prices = this.priceData.get(symbol).history;
+                const current = prices[prices.length - 1];
+                
+                // Calculate all indicators
+                const rsi = this.calculateRSI(prices);
+                const macd = this.calculateMACD(prices);
+                const bb = this.calculateBollingerBands(prices);
+                const stoch = this.calculateStochastic(prices);
+                const atr = this.calculateATR(prices);
+                const ma = this.calculateMovingAverages(prices);
+                const fib = this.calculateFibonacci(prices);
+                const divergence = this.detectDivergence(prices, rsi);
+                const volume = this.analyzeVolume(symbol);
+                
+                // Scoring System
+                let buyScore = 0, sellScore = 0, neutralScore = 0;
+                
+                // RSI Analysis
+                if (rsi < 30) { buyScore += 3; }
+                else if (rsi > 70) { sellScore += 3; }
+                else if (rsi < 50 && rsi > 40) { buyScore += 1; }
+                else if (rsi > 50 && rsi < 60) { sellScore += 1; }
+                
+                // MACD Analysis
+                if (macd.histogram > 0 && macd.trend === 'BULLISH') { buyScore += 2.5; }
+                else if (macd.histogram < 0 && macd.trend === 'BEARISH') { sellScore += 2.5; }
+                
+                // Bollinger Bands
+                if (current < bb.lower) { buyScore += 2; }
+                else if (current > bb.upper) { sellScore += 2; }
+                
+                // Stochastic
+                if (stoch.oversold) { buyScore += 1.5; }
+                else if (stoch.overbought) { sellScore += 1.5; }
+                
+                // Moving Average Alignment
+                if (ma.alignment === 'STRONG UPTREND') { buyScore += 3; }
+                else if (ma.alignment === 'STRONG DOWNTREND') { sellScore += 3; }
+                else if (ma.alignment === 'MIXED') { neutralScore += 2; }
+                
+                // Divergence
+                if (divergence.type === 'BEARISH') { sellScore += 1.5; }
+                else if (divergence.type === 'BULLISH') { buyScore += 1.5; }
+                
+                // Determine Signal Type
+                const totalScore = buyScore + sellScore + neutralScore;
+                const buyPercent = buyScore / (totalScore || 1);
+                const sellPercent = sellScore / (totalScore || 1);
+                
+                let type = 'NEUTRAL';
+                let confidence = 50;
+                
+                if (buyPercent > 0.55) {
+                    type = 'BUY';
+                    confidence = Math.min(95, 50 + (buyScore * 5));
+                } else if (sellPercent > 0.55) {
+                    type = 'SELL';
+                    confidence = Math.min(95, 50 + (sellScore * 5));
+                } else {
+                    type = 'NEUTRAL';
+                    confidence = 50 + (neutralScore * 3);
+                }
+                
+                // Calculate levels
+                const support = bb.lower;
+                const resistance = bb.upper;
+                const rr = Math.abs((resistance - current) / (current - support)) || 1;
+                
+                return {
+                    symbol,
+                    type,
+                    confidence: Math.round(confidence),
+                    rsi: Math.round(rsi),
+                    macd: macd.histogram > 0 ? '+' : '-',
+                    macdValue: Math.round(macd.histogram * 1000) / 1000,
+                    price: Math.round(current * 100) / 100,
+                    support: Math.round(support * 100) / 100,
+                    resistance: Math.round(resistance * 100) / 100,
+                    atr: Math.round(atr * 100) / 100,
+                    volatility: Math.round(this.priceData.get(symbol).volatility * 10) / 10,
+                    volume: volume.trend,
+                    rr: Math.round(rr * 10) / 10,
+                    ma: ma,
+                    bb: bb,
+                    timestamp: new Date().toLocaleTimeString('en-US'),
+                    indicators: { rsi, macd, bb, stoch, atr, divergence, volume },
+                    buyScore: Math.round(buyScore * 10) / 10,
+                    sellScore: Math.round(sellScore * 10) / 10
+                };
+            }
+        }
+        
+        // ===== APPLICATION =====
+        const engine = new AdvancedSignalEngine();
+        let currentSymbol = 'BTC/USD';
+        
+        function initializeUI() {
+            displaySymbols();
+            updateSignals();
+            updateClock();
+            setInterval(updateClock, 1000);
+            setInterval(updateSignals, 1000);
+            
+            addChatMessage('bot', '⚡ Quantum Signal AI online. Select a symbol or ask me anything about the signals.');
+        }
+        
+        function displaySymbols() {
+            const grid = document.getElementById('symbolsGrid');
+            grid.innerHTML = engine.symbols.map(s => 
+                `<div class="symbol-chip ${s === currentSymbol ? 'active' : ''}" onclick="selectSymbol('${s}')">${s}</div>`
+            ).join('');
+        }
+        
+        function selectSymbol(symbol) {
+            currentSymbol = symbol;
+            displaySymbols();
+            updateSignals();
+        }
+        
+        function searchSymbol() {
+            const input = document.getElementById('symbolInput');
+            const search = input.value.toUpperCase().trim();
+            
+            if (search && engine.symbols.includes(search)) {
+                selectSymbol(search);
+                input.value = '';
+            }
+        }
+        
+        function updateSignals() {
+            const container = document.getElementById('signalsContainer');
+            
+            engine.signals = [];
+            const primary = engine.generateSignal(currentSymbol);
+            engine.signals.push(primary);
+            
+            // Add secondary symbols
+            engine.symbols
+                .filter(s => s !== currentSymbol)
+                .slice(0, 5)
+                .forEach(symbol => {
+                    engine.signals.push(engine.generateSignal(symbol));
+                });
+            
+            container.innerHTML = engine.signals.map((signal, idx) => `
+                <div class="signal-card ${signal.type.toLowerCase()}" onclick="selectSignal(${idx})">
+                    <div class="signal-header">
+                        <span class="signal-symbol">${signal.symbol}</span>
+                        <span class="signal-badge ${signal.type.toLowerCase()}">${signal.type}</span>
+                    </div>
+                    <div class="signal-metrics">
+                        <div class="metric">
+                            <div class="metric-label">CONFIDENCE</div>
+                            <div class="metric-value">${signal.confidence}%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">PRICE</div>
+                            <div class="metric-value">$${signal.price}</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">RSI</div>
+                            <div class="metric-value">${signal.rsi}</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">VOL</div>
+                            <div class="metric-value">${signal.volatility}%</div>
+                        </div>
+                    </div>
+                    <div class="strength-meter">
+                        <div class="strength-fill" style="width: ${signal.confidence}%"></div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function selectSignal(idx) {
+            engine.selectedSignal = engine.signals[idx];
+            const signal = engine.selectedSignal;
+            
+            let message = `═══ ${signal.symbol} SIGNAL ANALYSIS ═══\n`;
+            message += `Type: ${signal.type} (${signal.confidence}% confidence)\n`;
+            message += `Price: $${signal.price} | RSI: ${signal.rsi}\n`;
+            message += `Support: $${signal.support} | Resistance: $${signal.resistance}\n`;
+            message += `Risk/Reward: 1:${signal.rr} | ATR: ${signal.atr}\n`;
+            message += `MACD: ${signal.macd} (${signal.macdValue})\n`;
+            message += `Volume Trend: ${signal.volume}`;
+            
+            addChatMessage('bot', message);
+        }
+        
+        function addChatMessage(sender, text) {
+            const display = document.getElementById('chatDisplay');
+            const msg = document.createElement('div');
+            msg.className = `chat-msg ${sender}`;
+            msg.textContent = text;
+            display.appendChild(msg);
+            display.scrollTop = display.scrollHeight;
+        }
+        
+        function sendChat() {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            
+            if (!text) return;
+            
+            addChatMessage('user', text);
+            input.value = '';
+            
+            setTimeout(() => {
+                const response = generateAIResponse(text);
+                addChatMessage('bot', response);
+            }, 200);
+        }
+        
+        function generateAIResponse(query) {
+            if (!engine.selectedSignal) {
+                return 'Please select a signal first by clicking on any signal card.';
+            }
+            
+            const s = engine.selectedSignal;
+            const q = query.toLowerCase();
+            
+            if (q.includes('detail') || q.includes('full') || q.includes('comprehensive')) {
+                return `DETAILED ANALYSIS: ${s.symbol}\n` +
+                       `Signal: ${s.type} | Confidence: ${s.confidence}%\n` +
+                       `Buy Score: ${s.buyScore}/10 | Sell Score: ${s.sellScore}/10\n` +
+                       `RSI: ${s.rsi} (Overbought: >70, Oversold: <30)\n` +
+                       `MACD: ${s.macd === '+' ? 'Positive Momentum' : 'Negative Momentum'}\n` +
+                       `Price Level: $${s.price}\n` +
+                       `Support Cluster: $${s.support}\n` +
+                       `Resistance Cluster: $${s.resistance}\n` +
+                       `Entry Strategy: ${s.type === 'BUY' ? 'Accumulate on dips to support' : 'Sell rallies to resistance'}\n` +
+                       `Stop Loss: ${s.type === 'BUY' ? '$' + Math.round((s.support - s.atr) * 100) / 100 : '$' + Math.round((s.resistance + s.atr) * 100) / 100}`;
+            }
+            
+            if (q.includes('risk') || q.includes('stop') || q.includes('sl')) {
+                const sl = s.type === 'BUY' ? Math.round((s.support - s.atr) * 100) / 100 : Math.round((s.resistance + s.atr) * 100) / 100;
+                const tp = s.type === 'BUY' ? Math.round((s.resistance + s.atr) * 100) / 100 : Math.round((s.support - s.atr) * 100) / 100;
+                
+                return `RISK MANAGEMENT: ${s.symbol}\n` +
+                       `Entry: $${s.price}\n` +
+                       `Stop Loss: $${sl}\n` +
+                       `Take Profit: $${tp}\n` +
+                       `Risk/Reward: 1:${s.rr}\n` +
+                       `Position Size: Calculate based on account risk (2-3% max per trade)\n` +
+                       `Max Loss: Risk amount × Account Size\n` +
+                       `Profit Target: Risk × ${s.rr}`;
+            }
+            
+            if (q.includes('entry') || q.includes('when') || q.includes('now')) {
+                return `ENTRY SIGNAL: ${s.symbol}\n` +
+                       `Recommendation: ${s.type === 'BUY' ? '✓ LONG' : '✗ SHORT'}\n` +
+                       `Current Price: $${s.price}\n` +
+                       `Best Entry: ${s.type === 'BUY' ? `On pullback to $${s.support}` : `On rally to $${s.resistance}`}\n` +
+                       `Confirmation: Wait for volume surge\n` +
+                       `Timeframe: Day or 4H chart for swing trades\n` +
+                       `Alternative Entry: Market order if ${s.type === 'BUY' ? 'price breaks above resistance' : 'price breaks below support'}`;
+            }
+            
+            if (q.includes('technical') || q.includes('indicator')) {
+                return `TECHNICAL INDICATORS: ${s.symbol}\n` +
+                       `RSI(14): ${s.rsi} - ${s.rsi > 70 ? 'OVERBOUGHT' : s.rsi < 30 ? 'OVERSOLD' : 'NEUTRAL'}\n` +
+                       `MACD: ${s.macd === '+' ? 'Bullish Crossover' : 'Bearish Crossover'}\n` +
+                       `BB Position: ${Math.round(s.bb.position)}% (0=lower, 100=upper)\n` +
+                       `ATR(14): ${s.atr} - Volatility Measure\n` +
+                       `MA Trend: ${s.ma.alignment}\n` +
+                       `Volume: ${s.volume} with trend strength`;
+            }
+            
+            if (q.includes('support') || q.includes('resistance') || q.includes('level')) {
+                return `PRICE LEVELS: ${s.symbol}\n` +
+                       `Current: $${s.price}\n` +
+                       `Major Support: $${s.support}\n` +
+                       `Major Resistance: $${s.resistance}\n` +
+                       `Range Width: $${Math.round((s.resistance - s.support) * 100) / 100}\n` +
+                       `Breakout Target (Long): $${Math.round((s.resistance + (s.resistance - s.support)) * 100) / 100}\n` +
+                       `Breakdown Target (Short): $${Math.round((s.support - (s.resistance - s.support)) * 100) / 100}`;
+            }
+            
+            return `QUICK ANALYSIS: ${s.symbol}\n${s.type} Signal at ${s.confidence}% confidence.\n` +
+                   `Price $${s.price} between $${s.support}-$${s.resistance}.\n` +
+                   `RSI: ${s.rsi} | MACD: ${s.macd}\n` +
+                   `Ask: detail | risk | entry | technical | support`;
+        }
+        
+        function updateClock() {
+            const now = new Date();
+            const utc = now.toLocaleTimeString('en-US', { timeZone: 'UTC' });
+            document.getElementById('timeDisplay').textContent = utc;
+        }
+        
+        // Keyboard handlers
+        document.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                if (document.activeElement.id === 'chatInput') sendChat();
+                if (document.activeElement.id === 'symbolInput') searchSymbol();
+            }
+        });
+        
+        // Initialize
+        window.addEventListener('load', initializeUI);
+    </script>
 </body>
 </html>
