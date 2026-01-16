@@ -1434,18 +1434,23 @@ const allSellValid = sellScore === conditions.sellConditions.length;
         }
         let lastAlertSignal = {};
 
+let lastAlertSignal = {};
+
 function triggerAlertIfNeeded(analysis) {
     const alertToggle = document.getElementById('alertToggle');
     const alertEnabled = alertToggle && alertToggle.checked;
     if (!alertEnabled) return;
 
-    if (analysis.signal === 'BUY' || analysis.signal === 'SELL') {
-        if (lastAlertSignal[analysis.symbol] === analysis.signal) return;
+    if (
+        (analysis.signal === 'BUY' || analysis.signal === 'SELL') &&
+        analysis.confidence >= 70
+    ) {
+        const prev = lastAlertSignal[analysis.symbol];
+        if (prev === analysis.signal) return;
 
         lastAlertSignal[analysis.symbol] = analysis.signal;
 
-        // ブラウザ通知
-        if (Notification.permission === 'granted') {
+        if ('Notification' in window && Notification.permission === 'granted') {
             new Notification(`🚨 ${analysis.signal} SIGNAL`, {
                 body: `${analysis.symbol}\nPrice: $${analysis.price}\nConfidence: ${analysis.confidence}%`,
             });
