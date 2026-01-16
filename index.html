@@ -1435,7 +1435,8 @@ const allSellValid = sellScore === conditions.sellConditions.length;
         let lastAlertSignal = {};
 
 function triggerAlertIfNeeded(analysis) {
-    const alertEnabled = document.getElementById('alertToggle')?.checked;
+    const alertToggle = document.getElementById('alertToggle');
+    const alertEnabled = alertToggle && alertToggle.checked;
     if (!alertEnabled) return;
 
     if (analysis.signal === 'BUY' || analysis.signal === 'SELL') {
@@ -1872,7 +1873,12 @@ function triggerAlertIfNeeded(analysis) {
             textarea.style.height = 'auto';
             textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
         }
-        
+        document.addEventListener('DOMContentLoaded', () => {
+    if ('Notification' in window && Notification.permission !== 'granted') {
+        Notification.requestPermission();
+    }
+});
+
         // ===== INITIALIZATION =====
         document.addEventListener('DOMContentLoaded', initializeUI);
     </script>
