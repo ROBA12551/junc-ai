@@ -1580,6 +1580,148 @@
     <script>
         // ===== QUANTITATIVE SIGNAL ENGINE =====
         class QuantitativeSignalEngine {
+
+              calculateRiskReward(data, signal) {
+        const price = data.price;
+        const indicators = data.indicators;
+        const atr = indicators.atr;
+        
+        // リスク管理パラメータ（利確と損切の割合）
+        const riskPercentage = 2; // リスク許容額（元本の2%）
+        const takeProfitRatios = [1, 2]; // 利確比率（リスクの1倍、2倍）
+        
+        let entry, stopLoss, takeProfit1, takeProfit2, riskAmount, positionSize, ratio;
+        
+        if (signal === 'BUY') {
+            // ロングポジション
+            stopLoss = price * 0.98; // 2%の損切
+            takeProfit1 = price * 1.02; // 2%の利確（リスク1:1）
+            takeProfit2 = price * 1.04; // 4%の利確（リスク1:2）
+            
+            // ポジションサイズ計算
+            riskAmount = price * (riskPercentage / 100);
+            const riskPerUnit = price - stopLoss;
+            positionSize = riskAmount / riskPerUnit;
+            
+        } else if (signal === 'SELL') {
+            // ショートポジション
+            stopLoss = price * 1.02; // 2%の損切
+            takeProfit1 = price * 0.98; // 2%の利確（リスク1:1）
+            takeProfit2 = price * 0.96; // 4%の利確（リスク1:2）
+            
+            // ポジションサイズ計算
+            riskAmount = price * (riskPercentage / 100);
+            const riskPerUnit = stopLoss - price;
+            positionSize = riskAmount / riskPerUnit;
+            
+        } else {
+            // HOLDの場合
+            entry = price;
+            stopLoss = price * 0.97;
+            takeProfit1 = price * 1.03;
+            takeProfit2 = price * 1.06;
+            positionSize = 0;
+        }
+        
+        const risk = Math.abs(price - stopLoss);
+        const reward = Math.abs(takeProfit1 - price);
+        ratio = risk > 0 ? Math.round((reward / risk) * 10) / 10 : 0;
+        
+        return {
+            entry: Math.round(price * 100) / 100,
+            stopLoss: Math.round(stopLoss * 100) / 100,
+            takeProfit1: Math.round(takeProfit1 * 100) / 100,
+            takeProfit2: Math.round(takeProfit2 * 100) / 100,
+            ratio: ratio,
+            riskPercentage: riskPercentage,
+            positionSize: Math.round(positionSize * 100) / 100,
+            positionValue: Math.round((positionSize * price) * 100) / 100,
+            riskAmount: Math.round(riskAmount * 100) / 100
+        };
+    }
+
+    // 取引判断ロジックの改善
+    generateSignal(symbol) {
+        const data = this.marketData.get(symbol);
+        if (!data) return null;
+        
+        const indicators = data.indicators;
+        const price = data.price;
+        
+        // 各指標のスコア計算
+        let longScore = 0;
+        let shortScore = 0;
+        let totalConditions = 0;
+        
+        // 1. RSIによる評価
+        if (indicators.rsi > 70) shortScore += 2;
+        else if (indicators.rsi < 30) longScore += 2;
+        else if (indicators.rsi > 55 && indicators.rsi <= 70) longScore += 1;
+        else if (indicators.rsi >= 30 && indicators.rsi < 45) shortScore += 1;
+        
+        // 2. MACDによる評価
+        if (indicators.macd.status === 'Bullish' && indicators.macd.strength === 'Strengthening') {
+            longScore += 2;
+        } else if (indicators.macd.status === 'Bearish' && indicators.macd.strength === 'Strengthening') {
+            shortScore += 2;
+        }
+        
+        // 3. ボリンジャーバンドによる評価
+        if (indicators.bollinger.position < 30) longScore += 2;
+        else if (indicators.bollinger.position > 70) shortScore += 2;
+        
+        // 4. ストキャスティクスによる評価
+        if (indicators.stochastic.status === 'Oversold') longScore += 1;
+        else if (indicators.stochastic.status === 'Overbought') shortScore += 1;
+        
+        // 5. 出来高による評価
+        if (indicators.volume.status === 'High' && indicators.volume.trend === 'Expanding') {
+            if (data.change > 0) longScore += 1;
+            else if (data.change < 0) shortScore += 1;
+        }
+        
+        totalConditions = 8; // 総評価項目数
+        
+        // 信頼度計算
+        const confidence = Math.min(95, Math.max(30, 
+            50 + (Math.max(longScore, shortScore) * 5)
+        ));
+        
+        // シグナル決定
+        let signal = 'HOLD';
+        let signalReason = '';
+        
+        if (longScore >= 6 && longScore > shortScore) {
+            signal = 'BUY';
+            signalReason = `ロング推奨 (スコア: ${longScore}/${totalConditions}) - RSI: ${indicators.rsi.toFixed(1)}, MACD: ${indicators.macd.status}, ボリンジャー: ${indicators.bollinger.description}`;
+        } else if (shortScore >= 6 && shortScore > longScore) {
+            signal = 'SELL';
+            signalReason = `ショート推奨 (スコア: ${shortScore}/${totalConditions}) - RSI: ${indicators.rsi.toFixed(1)}, MACD: ${indicators.macd.status}, ボリンジャー: ${indicators.bollinger.description}`;
+        } else {
+            signal = 'HOLD';
+            signalReason = `待機推奨 (ロング: ${longScore}, ショート: ${shortScore}) - 明確なシグナルなし`;
+        }
+        
+        // リスクリワード計算
+        const riskReward = this.calculateRiskReward(data, signal);
+        
+        return {
+            symbol: data.symbol,
+            name: data.name,
+            exchange: data.exchange,
+            price: data.price,
+            change: data.change,
+            signal: signal,
+            confidence: confidence,
+            indicators: indicators,
+            riskReward: riskReward,
+            signalReason: signalReason,
+            longScore: longScore,
+            shortScore: shortScore,
+            timestamp: new Date().toLocaleTimeString()
+        };
+    }
+
             constructor() {
                 this.symbols = this.generateSymbols();
                 this.currentSymbol = 'BTC/USDT';
@@ -2089,49 +2231,54 @@
             const grid = document.getElementById('symbolGrid');
             const count = document.getElementById('symbolCount');
             
-            grid.innerHTML = symbols.map(symbol => {
-                const analysis = engine.generateSignal(symbol.symbol);
-                const isActive = symbol.symbol === engine.currentSymbol;
-                const changeClass = symbol.change >= 0 ? 'positive' : 'negative';
-                const signalClass = analysis.signal.toLowerCase();
-                
-                return `
-                    <div class="symbol-card ${isActive ? 'active' : ''}" onclick="selectSymbol('${symbol.symbol}')">
-                        <div class="symbol-header">
-                            <div class="symbol-info">
-                                <div class="symbol-name">${symbol.symbol}</div>
-                                <div>
-                                    <span class="symbol-exchange">${symbol.exchange}</span>
-                                    <span style="margin-left: 8px; font-size: 12px; color: var(--text-tertiary);">${symbol.name}</span>
-                                </div>
-                            </div>
-                            <div class="symbol-price">
-                                <div class="price-value">$${symbol.price.toFixed(symbol.price > 1000 ? 0 : 2)}</div>
-                                <div class="price-change ${changeClass}">
-                                    ${symbol.change >= 0 ? '+' : ''}${symbol.change.toFixed(2)}%
-                                </div>
-                            </div>
-                        </div>
-                        <div class="symbol-indicators">
-                            <div class="indicator-tag ${signalClass}" style="background: ${
-                                signalClass === 'buy' ? 'rgba(0, 204, 102, 0.1)' :
-                                signalClass === 'sell' ? 'rgba(255, 51, 51, 0.1)' :
-                                'rgba(102, 102, 102, 0.1)'
-                            }; color: ${
-                                signalClass === 'buy' ? 'var(--success)' :
-                                signalClass === 'sell' ? 'var(--danger)' :
-                                'var(--neutral)'
-                            };">
-                                ${analysis.signal} (${analysis.confidence}%)
-                            </div>
-                            <div class="indicator-tag rsi">RSI: ${analysis.indicators.rsi.toFixed(1)}</div>
-                            <div class="indicator-tag macd">${analysis.indicators.macd.status}</div>
+            
+    grid.innerHTML = symbols.map(symbol => {
+        const analysis = engine.generateSignal(symbol.symbol);
+        const isActive = symbol.symbol === engine.currentSymbol;
+        const changeClass = symbol.change >= 0 ? 'positive' : 'negative';
+        const signalClass = analysis.signal.toLowerCase();
+        
+        // リスクリワード情報を追加
+        const rrInfo = analysis.riskReward.ratio > 0 ? 
+            `RR: 1:${analysis.riskReward.ratio.toFixed(1)}` : 'RR: N/A';
+        
+        return `
+            <div class="symbol-card ${isActive ? 'active' : ''}" onclick="selectSymbol('${symbol.symbol}')">
+                <div class="symbol-header">
+                    <div class="symbol-info">
+                        <div class="symbol-name">${symbol.symbol}</div>
+                        <div>
+                            <span class="symbol-exchange">${symbol.exchange}</span>
+                            <span style="margin-left: 8px; font-size: 12px; color: var(--text-tertiary);">${symbol.name}</span>
                         </div>
                     </div>
-                `;
-            }).join('');
-            
-            count.textContent = `${symbols.length} symbols`;
+                    <div class="symbol-price">
+                        <div class="price-value">$${symbol.price.toFixed(symbol.price > 1000 ? 0 : 2)}</div>
+                        <div class="price-change ${changeClass}">
+                            ${symbol.change >= 0 ? '+' : ''}${symbol.change.toFixed(2)}%
+                        </div>
+                    </div>
+                </div>
+                <div class="symbol-indicators">
+                    <div class="indicator-tag ${signalClass}" style="background: ${
+                        signalClass === 'buy' ? 'rgba(0, 204, 102, 0.1)' :
+                        signalClass === 'sell' ? 'rgba(255, 51, 51, 0.1)' :
+                        'rgba(102, 102, 102, 0.1)'
+                    }; color: ${
+                        signalClass === 'buy' ? 'var(--success)' :
+                        signalClass === 'sell' ? 'var(--danger)' :
+                        'var(--neutral)'
+                    };">
+                        ${analysis.signal} (${analysis.confidence}%)
+                    </div>
+                    <div class="indicator-tag rsi">RSI: ${analysis.indicators.rsi.toFixed(1)}</div>
+                    <div class="indicator-tag macd">${rrInfo}</div>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    count.textContent = `${symbols.length} symbols`;
         }
         
         function searchSymbols(query) {
@@ -2275,49 +2422,80 @@
             grid.innerHTML = html;
         }
         
-        function updateTradingPlan(analysis) {
-            const section = document.getElementById('tradingPlanSection');
-            const grid = document.getElementById('tradingPlanGrid');
-            
-            if (analysis.signal === 'HOLD') {
-                section.style.display = 'none';
-                return;
-            }
-            
-            section.style.display = 'block';
-            
-            const rr = analysis.riskReward;
-            const isBuy = analysis.signal === 'BUY';
-            
-            grid.innerHTML = `
-                <div class="plan-item">
-                    <div class="plan-label">Entry Price</div>
-                    <div class="plan-value">$${rr.entry.toFixed(2)}</div>
+       
+// トレーディングプランの更新関数
+function updateTradingPlan(analysis) {
+    const section = document.getElementById('tradingPlanSection');
+    const grid = document.getElementById('tradingPlanGrid');
+    
+    const rr = analysis.riskReward;
+    const isBuy = analysis.signal === 'BUY';
+    const isSell = analysis.signal === 'SELL';
+    
+    if (analysis.signal === 'HOLD') {
+        grid.innerHTML = `
+            <div class="plan-item" style="grid-column: span 2;">
+                <div class="plan-label">推奨アクション</div>
+                <div class="plan-value" style="color: var(--neutral);">待機 (HOLD)</div>
+                <div style="font-size: 12px; color: var(--text-secondary); margin-top: 8px;">
+                    ${analysis.signalReason}
                 </div>
-                <div class="plan-item">
-                    <div class="plan-label">Stop Loss</div>
-                    <div class="plan-value" style="color: var(--danger);">$${rr.stopLoss.toFixed(2)}</div>
-                </div>
-                <div class="plan-item">
-                    <div class="plan-label">Take Profit 1</div>
-                    <div class="plan-value" style="color: var(--success);">$${rr.takeProfit1.toFixed(2)}</div>
-                </div>
-                <div class="plan-item">
-                    <div class="plan-label">Take Profit 2</div>
-                    <div class="plan-value" style="color: var(--success);">$${rr.takeProfit2.toFixed(2)}</div>
-                </div>
-                <div class="plan-item" style="grid-column: span 2; background: linear-gradient(135deg, var(--accent-light), var(--bg-tertiary));">
-                    <div class="plan-label">Position Management</div>
-                    <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-top: 8px;">
-                        • Risk: ${((Math.abs(rr.entry - rr.stopLoss) / rr.entry) * 100).toFixed(1)}% of position<br>
-                        • ${isBuy ? 'Move stop to breakeven at TP1' : 'Trail stop after TP1'}<br>
-                        • Consider partial profit at TP1<br>
-                        • Max position: 3% of portfolio
-                    </div>
-                </div>
-            `;
-        }
-        
+            </div>
+            <div class="plan-item">
+                <div class="plan-label">現在価格</div>
+                <div class="plan-value">$${rr.entry.toFixed(2)}</div>
+            </div>
+            <div class="plan-item">
+                <div class="plan-label">次のシグナル</div>
+                <div class="plan-value">条件待ち</div>
+            </div>
+        `;
+        return;
+    }
+    
+    grid.innerHTML = `
+        <div class="plan-item">
+            <div class="plan-label">エントリー価格</div>
+            <div class="plan-value">$${rr.entry.toFixed(2)}</div>
+        </div>
+        <div class="plan-item">
+            <div class="plan-label">損切価格 (SL)</div>
+            <div class="plan-value" style="color: var(--danger);">$${rr.stopLoss.toFixed(2)}</div>
+            <div class="metric-subtext">損失: ${((Math.abs(rr.entry - rr.stopLoss) / rr.entry) * 100).toFixed(1)}%</div>
+        </div>
+        <div class="plan-item">
+            <div class="plan-label">利確1 (TP1)</div>
+            <div class="plan-value" style="color: var(--success);">$${rr.takeProfit1.toFixed(2)}</div>
+            <div class="metric-subtext">利益: ${((Math.abs(rr.takeProfit1 - rr.entry) / rr.entry) * 100).toFixed(1)}%</div>
+        </div>
+        <div class="plan-item">
+            <div class="plan-label">利確2 (TP2)</div>
+            <div class="plan-value" style="color: var(--success);">$${rr.takeProfit2.toFixed(2)}</div>
+            <div class="metric-subtext">利益: ${((Math.abs(rr.takeProfit2 - rr.entry) / rr.entry) * 100).toFixed(1)}%</div>
+        </div>
+        <div class="plan-item">
+            <div class="plan-label">リスクリワード比</div>
+            <div class="plan-value">1:${rr.ratio.toFixed(1)}</div>
+        </div>
+        <div class="plan-item">
+            <div class="plan-label">推奨ポジション</div>
+            <div class="plan-value">${rr.positionSize.toFixed(4)} 単位</div>
+            <div class="metric-subtext">約 $${rr.positionValue.toFixed(2)}</div>
+        </div>
+        <div class="plan-item" style="grid-column: span 2; background: linear-gradient(135deg, var(--accent-light), var(--bg-tertiary));">
+            <div class="plan-label">ポジション管理</div>
+            <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-top: 8px;">
+                <strong>資金管理:</strong><br>
+                • リスク: ${rr.riskPercentage}% ($${rr.riskAmount.toFixed(2)})<br>
+                • 最大ポジション: 3%のポートフォリオ<br><br>
+                <strong>エグジット戦略:</strong><br>
+                • TP1で50%の利確<br>
+                • 残りはTP2に向け、SLをブレイクイーブンに移動<br>
+                • トレンド反転時は全ポジション決済
+            </div>
+        </div>
+    `;
+}
         function updateWarning(analysis) {
             const box = document.getElementById('warningBox');
             const content = document.getElementById('warningContent');
@@ -2406,51 +2584,151 @@
             }, 600);
         }
         
-        function generateAIResponse(question, analysis) {
-            const q = question.toLowerCase();
-            const conditions = analysis.conditions;
-            
-            if (q.includes('why') && q.includes('hold')) {
-                const failedBuy = conditions.buyConditions.filter(c => !c.value);
-                const failedSell = conditions.sellConditions.filter(c => !c.value);
-                
-                if (analysis.signal === 'HOLD') {
-                    let response = `HOLD signal because:\n\n`;
-                    
-                    if (failedBuy.length > 0) {
-                        response += `❌ BUY conditions failed:\n`;
-                        failedBuy.forEach(c => {
-                            response += `• ${c.name}\n`;
-                        });
-                        response += `\n`;
-                    }
-                    
-                    if (failedSell.length > 0) {
-                        response += `❌ SELL conditions failed:\n`;
-                        failedSell.forEach(c => {
-                            response += `• ${c.name}\n`;
-                        });
-                        response += `\n`;
-                    }
-                    
-                    response += `Confidence: ${analysis.confidence}% (threshold: 65%)`;
-                    return response;
-                }
-            }
-            
-            if (q.includes('risk') || q.includes('stop')) {
-                return `RISK ANALYSIS for ${analysis.symbol}:\n\n` +
-                       `• Entry: $${analysis.riskReward.entry.toFixed(2)}\n` +
-                       `• Stop Loss: $${analysis.riskReward.stopLoss.toFixed(2)}\n` +
-                       `• Risk/Reward: 1:${analysis.riskReward.ratio.toFixed(1)}\n` +
-                       `• Max position: 3% of capital`;
-            }
-            
-            // Default response
-            return `Current signal for ${analysis.symbol}: ${analysis.signal} (${analysis.confidence}% confidence)\n\n` +
-                   `Ask: "Why HOLD?", "Risk analysis", or "Conditions"`;
+       function generateAIResponse(question, analysis) {
+    const q = question.toLowerCase();
+    
+    // 段階的な思考プロセスを模倣
+    const thinkProcess = [];
+    
+    if (q.includes('利確') || q.includes('損切') || q.includes('stop') || q.includes('take profit')) {
+        thinkProcess.push(
+            "1. ユーザーがリスク管理パラメータについて質問しています",
+            "2. 現在のシグナル: " + analysis.signal,
+            "3. 価格分析: $" + analysis.price.toFixed(2),
+            "4. リスクリワード比: 1:" + analysis.riskReward.ratio.toFixed(1)
+        );
+        
+        let response = `🔍 リスク管理分析（段階的思考）:\n\n`;
+        response += thinkProcess.join('\n') + '\n\n';
+        response += `📊 詳細パラメータ:\n`;
+        response += `• エントリー: $${analysis.riskReward.entry.toFixed(2)}\n`;
+        response += `• 損切 (SL): $${analysis.riskReward.stopLoss.toFixed(2)} (${((Math.abs(analysis.riskReward.entry - analysis.riskReward.stopLoss) / analysis.riskReward.entry) * 100).toFixed(1)}%)\n`;
+        response += `• 利確1 (TP1): $${analysis.riskReward.takeProfit1.toFixed(2)} (${((Math.abs(analysis.riskReward.takeProfit1 - analysis.riskReward.entry) / analysis.riskReward.entry) * 100).toFixed(1)}%)\n`;
+        response += `• 利確2 (TP2): $${analysis.riskReward.takeProfit2.toFixed(2)} (${((Math.abs(analysis.riskReward.takeProfit2 - analysis.riskReward.entry) / analysis.riskReward.entry) * 100).toFixed(1)}%)\n`;
+        response += `• リスクリワード比: 1:${analysis.riskReward.ratio.toFixed(1)}\n`;
+        response += `• 推奨ポジション: ${analysis.riskReward.positionSize.toFixed(4)} 単位\n\n`;
+        response += `💡 推奨戦略:\n`;
+        
+        if (analysis.signal === 'BUY') {
+            response += `1. ロングポジションを $${analysis.riskReward.entry.toFixed(2)} でエントリー\n`;
+            response += `2. 損切は $${analysis.riskReward.stopLoss.toFixed(2)} に設定\n`;
+            response += `3. TP1 ($${analysis.riskReward.takeProfit1.toFixed(2)}) で50%利確\n`;
+            response += `4. 残りはTP2 ($${analysis.riskReward.takeProfit2.toFixed(2)}) まで保有\n`;
+        } else if (analysis.signal === 'SELL') {
+            response += `1. ショートポジションを $${analysis.riskReward.entry.toFixed(2)} でエントリー\n`;
+            response += `2. 損切は $${analysis.riskReward.stopLoss.toFixed(2)} に設定\n`;
+            response += `3. TP1 ($${analysis.riskReward.takeProfit1.toFixed(2)}) で50%利確\n`;
+            response += `4. 残りはTP2 ($${analysis.riskReward.takeProfit2.toFixed(2)}) まで保有\n`;
+        } else {
+            response += `現在はHOLD推奨です。明確なエントリーシグナルがありません。\n`;
+            response += `待機条件:\n`;
+            response += `• RSI: ${analysis.indicators.rsi.toFixed(1)} (理想: <30 or >70)\n`;
+            response += `• MACD: ${analysis.indicators.macd.status}\n`;
+            response += `• ボリンジャー: ${analysis.indicators.bollinger.description}\n`;
         }
         
+        return response;
+        
+    } else if (q.includes('なぜ') || q.includes('why') || q.includes('理由')) {
+        thinkProcess.push(
+            "1. ユーザーがシグナルの理由を尋ねています",
+            "2. 現在のシグナル: " + analysis.signal,
+            "3. ロングスコア: " + analysis.longScore + "/8",
+            "4. ショートスコア: " + analysis.shortScore + "/8",
+            "5. 総合信頼度: " + analysis.confidence + "%"
+        );
+        
+        let response = `🔍 シグナル決定理由（段階的分析）:\n\n`;
+        response += thinkProcess.join('\n') + '\n\n';
+        response += `📊 指標詳細:\n`;
+        response += `• RSI (14): ${analysis.indicators.rsi.toFixed(1)} `;
+        if (analysis.indicators.rsi > 70) response += `(売られすぎ)\n`;
+        else if (analysis.indicators.rsi < 30) response += `(買われすぎ)\n`;
+        else response += `(中立)\n`;
+        
+        response += `• MACD: ${analysis.indicators.macd.status} (${analysis.indicators.macd.strength})\n`;
+        response += `• ボリンジャーバンド: ${analysis.indicators.bollinger.description}\n`;
+        response += `• ストキャスティクス: ${analysis.indicators.stochastic.status} (${analysis.indicators.stochastic.value.toFixed(1)})\n`;
+        response += `• 出来高: ${analysis.indicators.volume.status}, 傾向: ${analysis.indicators.volume.trend}\n\n`;
+        
+        response += `🎯 判断基準:\n`;
+        if (analysis.signal === 'BUY') {
+            response += `ロング推奨の理由:\n`;
+            response += `1. 複数の指標が買いシグナルを示しています\n`;
+            response += `2. リスクリワード比が有利 (1:${analysis.riskReward.ratio.toFixed(1)})\n`;
+            response += `3. 信頼度: ${analysis.confidence}%\n`;
+        } else if (analysis.signal === 'SELL') {
+            response += `ショート推奨の理由:\n`;
+            response += `1. 複数の指標が売りシグナルを示しています\n`;
+            response += `2. リスクリワード比が有利 (1:${analysis.riskReward.ratio.toFixed(1)})\n`;
+            response += `3. 信頼度: ${analysis.confidence}%\n`;
+        } else {
+            response += `HOLD推奨の理由:\n`;
+            response += `1. 指標が混在しており明確な方向性がありません\n`;
+            response += `2. リスクリワード比が最適ではありません\n`;
+            response += `3. より明確なシグナルを待つことを推奨します\n`;
+        }
+        
+        return response;
+        
+    } else if (q.includes('long') || q.includes('short') || q.includes('buy') || q.includes('sell')) {
+        thinkProcess.push(
+            "1. ユーザーが取引方向について質問しています",
+            "2. 現在の市場条件を分析",
+            "3. 各指標の整合性を確認",
+            "4. リスクパラメータを計算"
+        );
+        
+        let response = `🔍 取引方向分析:\n\n`;
+        response += thinkProcess.join('\n') + '\n\n';
+        response += `📈 市場分析結果:\n`;
+        response += `• 推奨: ${analysis.signal === 'BUY' ? 'LONG (買い)' : analysis.signal === 'SELL' ? 'SHORT (売り)' : 'HOLD (待機)'}\n`;
+        response += `• 信頼度: ${analysis.confidence}%\n`;
+        response += `• エントリー価格: $${analysis.price.toFixed(2)}\n\n`;
+        
+        response += `⚖️ リスク管理:\n`;
+        response += `• 損切: ${((Math.abs(analysis.riskReward.entry - analysis.riskReward.stopLoss) / analysis.riskReward.entry) * 100).toFixed(1)}%\n`;
+        response += `• 利確: ${((Math.abs(analysis.riskReward.takeProfit1 - analysis.riskReward.entry) / analysis.riskReward.entry) * 100).toFixed(1)}% / ${((Math.abs(analysis.riskReward.takeProfit2 - analysis.riskReward.entry) / analysis.riskReward.entry) * 100).toFixed(1)}%\n`;
+        response += `• リスクリワード: 1:${analysis.riskReward.ratio.toFixed(1)}\n\n`;
+        
+        response += `💡 実行計画:\n`;
+        if (analysis.signal !== 'HOLD') {
+            response += `1. ${analysis.signal === 'BUY' ? 'ロング' : 'ショート'}ポジションをエントリー\n`;
+            response += `2. 直ちに損切注文を設定\n`;
+            response += `3. 利確注文を2段階で設定\n`;
+            response += `4. ポジションサイズ: ${analysis.riskReward.positionSize.toFixed(4)} 単位\n`;
+        } else {
+            response += `現在の市場条件では取引を推奨しません。\n`;
+            response += `以下の条件を監視してください:\n`;
+            response += `• RSIが30以下または70以上になる\n`;
+            response += `• MACDが明確な方向性を示す\n`;
+            response += `• ボリンジャーバンドのブレイクアウト\n`;
+        }
+        
+        return response;
+        
+    } else {
+        // デフォルト応答
+        thinkProcess.push(
+            "1. ユーザーの質問を分析しています",
+            "2. 現在の市場データを参照",
+            "3. 定量分析を適用",
+            "4. 回答を構築"
+        );
+        
+        return `🤖 定量分析AI:\n\n` +
+               `思考プロセス:\n${thinkProcess.join('\n')}\n\n` +
+               `現在のシグナル: ${analysis.signal} (${analysis.confidence}%)\n` +
+               `価格: $${analysis.price.toFixed(2)}\n` +
+               `リスクリワード: 1:${analysis.riskReward.ratio.toFixed(1)}\n\n` +
+               `以下の質問ができます:\n` +
+               `• "利確と損切は？"\n` +
+               `• "なぜ${analysis.signal}なの？"\n` +
+               `• "LONG/SHORTどちら？"\n` +
+               `• "ポジションサイズは？"`;
+    }
+}
+
         function autoResizeTextarea() {
             const textarea = document.getElementById('chatInput');
             textarea.style.height = 'auto';
